@@ -59,8 +59,8 @@ module.exports = {
   // Sender for outgoing email (must be a verified sender in Brevo).
   // Accepts "Name <email>" or a plain email.
   email: {
-    from: process.env.EMAIL_FROM || process.env.SMTP_FROM || process.env.SMTP_USER
-      || 'Shri Yamuna Infra <nexatechinnovation4@gmail.com>',
+    from: process.env.EMAIL_FROM || process.env.SMTP_FROM
+      || 'Shri Yamuna Infra <traveonventures@gmail.com>',
   },
 
   app: {
