@@ -56,6 +56,13 @@ module.exports = {
     apiKey: process.env.BREVO_API_KEY,
   },
 
+  // Sender for outgoing email (must be a verified sender in Brevo).
+  // Accepts "Name <email>" or a plain email.
+  email: {
+    from: process.env.EMAIL_FROM || process.env.SMTP_FROM || process.env.SMTP_USER
+      || 'Shri Yamuna Infra <nexatechinnovation4@gmail.com>',
+  },
+
   app: {
     baseUrl: process.env.APP_BASE_URL || 'http://localhost:4000',
     mobileScheme: process.env.MOBILE_APP_SCHEME || 'yamunainfra',

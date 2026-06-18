@@ -1,10 +1,10 @@
 const config = require('../config/env');
 
-// Parse SMTP_FROM ("Name <email>" or "email") into Brevo's sender shape.
+// Parse EMAIL_FROM ("Name <email>" or "email") into Brevo's sender shape.
 function parseSender() {
-  const raw = config.smtp.from || config.smtp.user || '';
+  const raw = (config.email.from || '').trim();
   const m = raw.match(/^\s*(.*?)\s*<\s*([^>]+)\s*>\s*$/);
-  if (m) return { name: (m[1] || 'Shri Yamuna Infra').replace(/^"|"$/g, ''), email: m[2] };
+  if (m) return { name: (m[1] || 'Shri Yamuna Infra').replace(/^"|"$/g, '').trim(), email: m[2].trim() };
   return { name: 'Shri Yamuna Infra', email: raw };
 }
 
