@@ -14,6 +14,16 @@ function generateOtp() {
 }
 
 async function sendOtp(mobile) {
+  // Residents are created by the admin portal — only a known, active account
+  // may receive an OTP. No self-registration.
+  const user = await UserModel.findByMobile(mobile);
+  if (!user) {
+    throw new AppError('No resident account found for this number. Please contact the office.', 404);
+  }
+  if (user.is_active === 0) {
+    throw new AppError('Your account is inactive. Please contact the office.', 403);
+  }
+
   const code = generateOtp();
   const expiresAt = new Date(Date.now() + config.otp.ttlSeconds * 1000);
 
@@ -35,14 +45,14 @@ async function verifyOtp(mobile, submittedCode) {
     await OtpModel.incrementAttempts(record.id);
     throw new AppError('Invalid OTP. Please try again.', 400);
   }
-  await OtpModel.markConsumed(record.id);
-
-  let user = await UserModel.findByMobile(mobile);
+  const user = await UserModel.findByMobile(mobile);
   if (!user) {
-    // Auto-register on first verified login. In production you may want
-    // to gate this behind an admin-created allowlist instead.
-    user = await UserModel.create({ mobile });
+    throw new AppError('No resident account found. Please contact the office.', 404);
   }
+  if (user.is_active === 0) {
+    throw new AppError('Your account is inactive. Please contact the office.', 403);
+  }
+  await OtpModel.markConsumed(record.id);
 
   // If they've been linked to a booking since last login, pick it up.
   const synced = await UserModel.syncPrimaryBookingId(user.id);
@@ -66,6 +76,16 @@ async function verifyOtp(mobile, submittedCode) {
 // 180 chars), so we reuse OtpModel keyed by the email address.
 async function sendEmailOtp(email) {
   const id = String(email).toLowerCase().trim();
+
+  // Only an admin-created, active resident may log in. No self-registration.
+  const user = await UserModel.findByEmail(id);
+  if (!user) {
+    throw new AppError('No resident account found for this email. Please contact the office.', 404);
+  }
+  if (user.is_active === 0) {
+    throw new AppError('Your account is inactive. Please contact the office.', 403);
+  }
+
   const code = generateOtp();
   const expiresAt = new Date(Date.now() + config.otp.ttlSeconds * 1000);
   await OtpModel.create({ mobile: id, code, expiresAt });
@@ -93,10 +113,14 @@ async function verifyEmailOtp(email, submittedCode) {
     await OtpModel.incrementAttempts(record.id);
     throw new AppError('Invalid OTP. Please try again.', 400);
   }
+  const user = await UserModel.findByEmail(id);
+  if (!user) {
+    throw new AppError('No resident account found. Please contact the office.', 404);
+  }
+  if (user.is_active === 0) {
+    throw new AppError('Your account is inactive. Please contact the office.', 403);
+  }
   await OtpModel.markConsumed(record.id);
-
-  let user = await UserModel.findByEmail(id);
-  if (!user) user = await UserModel.create({ email: id });
 
   const synced = await UserModel.syncPrimaryBookingId(user.id);
   if (synced) user.primary_booking_id = synced;

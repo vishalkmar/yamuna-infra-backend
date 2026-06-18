@@ -3,7 +3,7 @@ const { pool } = require('../config/db');
 const UserModel = {
   async findByMobile(mobile) {
     const [rows] = await pool.query(
-      'SELECT id, mobile, name, email, primary_booking_id FROM users WHERE mobile = ? LIMIT 1',
+      'SELECT id, mobile, name, email, is_active, primary_booking_id FROM users WHERE mobile = ? LIMIT 1',
       [mobile],
     );
     return rows[0] || null;
@@ -11,7 +11,7 @@ const UserModel = {
 
   async findByEmail(email) {
     const [rows] = await pool.query(
-      'SELECT id, mobile, name, email, primary_booking_id FROM users WHERE email = ? ORDER BY id ASC LIMIT 1',
+      'SELECT id, mobile, name, email, is_active, primary_booking_id FROM users WHERE email = ? ORDER BY id ASC LIMIT 1',
       [email],
     );
     return rows[0] || null;

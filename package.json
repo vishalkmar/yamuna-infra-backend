@@ -8,6 +8,7 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "migrate": "node src/scripts/migrate.js",
+    "reminders": "node src/scripts/dueReminders.js",
     "test": "jest"
   },
   "dependencies": {
@@ -26,6 +27,7 @@
     "mysql2": "^3.11.0",
     "nodemailer": "^8.0.10",
     "pdf-parse": "^2.4.5",
+    "pdfkit": "^0.15.2",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

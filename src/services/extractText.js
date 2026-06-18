@@ -11,25 +11,49 @@ function kindFromName(name = '') {
   return 'text';
 }
 
+// Extract text from a PDF, supporting both pdf-parse v2 (PDFParse class) and
+// the legacy v1 callable export.
+async function extractPdf(buffer) {
+  const mod = require('pdf-parse');
+  if (mod && typeof mod.PDFParse === 'function') {
+    const parser = new mod.PDFParse({ data: buffer });
+    try {
+      const data = await parser.getText();
+      return (data.text || '').replace(/\n--\s*\d+ of \d+\s*--/g, '').trim();
+    } finally {
+      if (typeof parser.destroy === 'function') await parser.destroy();
+    }
+  }
+  // v1 fallback: module itself is the parser function.
+  const fn = typeof mod === 'function' ? mod : mod.default;
+  const data = await fn(buffer);
+  return (data.text || '').trim();
+}
+
 async function fromBuffer(buffer, filename) {
   const kind = kindFromName(filename);
   if (kind === 'pdf') {
-    const pdfParse = require('pdf-parse');
-    const data = await pdfParse(buffer);
-    return { kind, text: data.text || '' };
+    return { kind, text: await extractPdf(buffer) };
   }
   if (kind === 'docx') {
     const mammoth = require('mammoth');
     const { value } = await mammoth.extractRawText({ buffer });
-    return { kind, text: value || '' };
+    return { kind, text: (value || '').trim() };
   }
   if (kind === 'excel' || kind === 'csv') {
     const XLSX = require('xlsx');
     const wb = XLSX.read(buffer, { type: 'buffer' });
-    const parts = wb.SheetNames.map(n => `# ${n}\n${XLSX.utils.sheet_to_csv(wb.Sheets[n])}`);
-    return { kind, text: parts.join('\n\n') };
+    // Render each sheet as a Markdown-ish table so the LLM keeps row/column
+    // structure when answering from spreadsheets.
+    const parts = wb.SheetNames.map(name => {
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, blankrows: false, defval: '' });
+      if (!rows.length) return `# ${name}\n(empty)`;
+      const lines = rows.map(r => r.map(c => String(c).replace(/\s+/g, ' ').trim()).join(' | '));
+      return `# ${name}\n${lines.join('\n')}`;
+    });
+    return { kind, text: parts.join('\n\n').trim() };
   }
-  return { kind: 'text', text: buffer.toString('utf8') };
+  return { kind: 'text', text: buffer.toString('utf8').trim() };
 }
 
 // Fetch a URL and reduce the HTML to readable text.

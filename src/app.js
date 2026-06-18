@@ -41,6 +41,17 @@ const authLimiter = rateLimit({
 app.use('/api/auth', authLimiter);
 app.use('/api/admin/auth', authLimiter);
 
+// Root + /api index — friendly response so the base URL isn't a "Route not found".
+const apiInfo = (req, res) =>
+  res.json({
+    success: true,
+    service: 'Yamuna Infra API',
+    status: 'running',
+    health: '/api/health',
+  });
+app.get('/', apiInfo);
+app.get('/api', apiInfo);
+
 app.use('/api', routes);
 
 app.use(notFound);

@@ -24,6 +24,8 @@ const notificationRoutes = require('./notificationRoutes');
 const foodRoutes = require('./foodRoutes');
 const profileRoutes = require('./profileRoutes');
 const settingsRoutes = require('./settingsRoutes');
+const constructionRoutes = require('./constructionRoutes');
+const paymentPlanRoutes = require('./paymentPlanRoutes');
 const adminSettingsController = require('./../controllers/adminSettingsController');
 
 const router = express.Router();
@@ -67,6 +69,8 @@ router.use('/notifications', notificationRoutes); // A14 — resident notificati
 router.use('/food', foodRoutes);         // Task 8 — app food-app alias
 router.use('/profile', profileRoutes);   // Task 8 — resident profile (persisted)
 router.use('/settings', settingsRoutes); // Task 8 — resident app settings (persisted)
+router.use('/construction', constructionRoutes); // Task 2 — per-property construction tracker
+router.use('/payment-plan', paymentPlanRoutes);  // Task 3 — per-property payment plan
 
 // All 26 modules mounted. Future routes can be plugged in here:
 // router.use('/possession', possessionRoutes);

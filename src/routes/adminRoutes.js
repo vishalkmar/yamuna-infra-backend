@@ -15,6 +15,8 @@ router.use('/auth', authRoutes);
 router.use('/audit', auditRouter);   // A19 (superadmin)
 router.use('/admins', adminsRouter); // A19 (superadmin)
 router.use('/users', require('./admin/usersRoutes'));       // A3
+router.use('/construction', require('./admin/constructionRoutes')); // Construction system
+router.use('/payment-plan', require('./admin/paymentPlanRoutes')); // Payment & Plan (per-property)
 router.use('/services', require('./admin/servicesRoutes')); // A4
 router.use('/food', require('./admin/foodRoutes'));         // A5
 router.use('/temples', require('./admin/templesRoutes'));   // A9
@@ -29,7 +31,7 @@ router.use('/visitors', require('./admin/visitorsRoutes'));     // A12
 router.use('/rewards', require('./admin/rewardsRoutes'));       // A13
 router.use('/notifications', require('./admin/notificationsRoutes')); // A14
 router.use('/stats', require('./admin/statsRoutes'));           // A2
-router.use('/payments', require('./admin/paymentsRoutes'));     // A16
+// A16 "Payments & Reports" removed — replaced by /payment-plan (per-property).
 router.use('/media', require('./admin/mediaRoutes'));           // A17
 router.use('/settings', require('./admin/settingsRoutes'));     // A18
 router.use('/ai', require('./admin/aiRoutes'));                 // A15

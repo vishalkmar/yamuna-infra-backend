@@ -12,7 +12,8 @@ const ProfileModel = {
   // Assemble the full profile shape the app expects.
   async getProfile(userId) {
     const [[u]] = await pool.query(
-      `SELECT id, name, mobile, email, kyc_status AS kycStatus, kyc_id_type AS kycIdType,
+      `SELECT id, name, mobile, email, profile_photo AS profilePhoto,
+              kyc_status AS kycStatus, kyc_id_type AS kycIdType,
               kyc_id_number AS kycIdNumber, kyc_reviewed_at AS kycReviewedAt
        FROM users WHERE id = ? LIMIT 1`, [userId],
     );
@@ -29,6 +30,14 @@ const ProfileModel = {
        WHERE bo.user_id = ? ORDER BY (bo.role = 'primary') DESC, b.id LIMIT 1`, [userId],
     );
 
+    // Admin-assigned properties (a resident can own one or more flats).
+    const [properties] = await pool.query(
+      `SELECT id, label, project_name AS projectName, tower, flat_no AS flatNo, floor,
+              area_sqft AS areaSqft, property_type AS propertyType, address_line AS addressLine,
+              city, state, pincode
+       FROM user_properties WHERE user_id = ? ORDER BY id ASC`, [userId],
+    );
+
     let channels = DEFAULT_CHANNELS;
     if (pref?.channels) { try { channels = typeof pref.channels === 'string' ? JSON.parse(pref.channels) : pref.channels; } catch { /* default */ } }
 
@@ -36,10 +45,12 @@ const ProfileModel = {
     return {
       personal: {
         name: u?.name || '', mobile: u?.mobile || '', email: u?.email || '',
+        photo: u?.profilePhoto || '',
         dob: p?.dob || '', gender: p?.gender || '', altPhone: p?.alt_phone || '', occupation: p?.occupation || '',
         addressLine: p?.address_line || '', city: p?.city || '', state: p?.state || '', pincode: p?.pincode || '',
         tower: unit?.tower || '', unit: unit?.unit || '', projectName: unit?.projectName || '',
       },
+      properties: properties || [],
       preferences: {
         language: pref?.language || 'en', dietary: pref?.dietary || 'veg',
         channels, festivalAlerts: pref ? !!pref.festival_alerts : true,
