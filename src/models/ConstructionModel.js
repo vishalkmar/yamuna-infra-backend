@@ -116,6 +116,11 @@ const ConstructionModel = {
       [d.workStatus ?? null, d.workTargetDate || null,
        d.workPercent ?? null, d.floorsTotal ?? null, d.floorsDone ?? null, propertyId],
     );
+    // Building progress is one global value — write it through to site_overview
+    // so it shows the same everywhere (Home, Construction, Site Overview).
+    if (d.workPercent != null && d.workPercent !== '') {
+      await pool.query('UPDATE site_overview SET progress_percent = ? WHERE id = 1', [Number(d.workPercent)]);
+    }
     return r.affectedRows > 0;
   },
 

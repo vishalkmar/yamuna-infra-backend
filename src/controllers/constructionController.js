@@ -2,6 +2,7 @@ const asyncHandler = require('../utils/asyncHandler');
 const { success } = require('../utils/response');
 const AppError = require('../utils/AppError');
 const ConstructionModel = require('../models/ConstructionModel');
+const SiteModel = require('../models/SiteModel');
 
 // GET /api/construction/properties — resident's own properties (summary cards)
 exports.myProperties = asyncHandler(async (req, res) => {
@@ -16,6 +17,9 @@ exports.progress = asyncHandler(async (req, res) => {
     throw new AppError('Property not found', 404);
   }
   const data = await ConstructionModel.getResidentProgress(propertyId);
+  // Building progress % is a single global value (set once, shown everywhere).
+  const site = await SiteModel.getConfig();
+  if (site && site.progressPercent != null) data.progressPct = Number(site.progressPercent);
   return success(res, data);
 });
 
