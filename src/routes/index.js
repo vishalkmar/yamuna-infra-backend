@@ -72,6 +72,7 @@ router.use('/settings', settingsRoutes); // Task 8 — resident app settings (pe
 router.use('/construction', constructionRoutes); // Task 2 — per-property construction tracker
 router.use('/payment-plan', paymentPlanRoutes);  // Task 3 — per-property payment plan
 router.use('/documents', require('./documentsRoutes')); // resident documents (booking dockets)
+router.use('/site', require('./siteRoutes')); // Site Overview (global)
 
 // All 26 modules mounted. Future routes can be plugged in here:
 // router.use('/possession', possessionRoutes);

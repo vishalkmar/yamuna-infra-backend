@@ -20,6 +20,7 @@ router.use('/construction', require('./admin/constructionRoutes')); // Construct
 router.use('/payment-plan', require('./admin/paymentPlanRoutes')); // Payment & Plan (per-property)
 router.use('/sos', require('./admin/sosRoutes')); // SOS & Emergency
 router.use('/documents', require('./admin/documentsRoutes')); // Booking dockets / resident docs
+router.use('/site', require('./admin/siteRoutes')); // Site Overview (global, admin-managed)
 router.use('/services', require('./admin/servicesRoutes')); // A4
 router.use('/food', require('./admin/foodRoutes'));         // A5
 router.use('/temples', require('./admin/templesRoutes'));   // A9
