@@ -1,3 +1,7 @@
+// Prefer IPv4 for all DNS lookups. Hosts like Render/Railway have no IPv6
+// egress, so resolving (e.g.) smtp.gmail.com to IPv6 fails with ENETUNREACH.
+try { require('dns').setDefaultResultOrder('ipv4first'); } catch (_) { /* older node */ }
+
 const app = require('./app');
 const config = require('./config/env');
 const { ping } = require('./config/db');
