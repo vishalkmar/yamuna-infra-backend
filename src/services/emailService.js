@@ -2,10 +2,13 @@ const config = require('../config/env');
 
 // Parse EMAIL_FROM ("Name <email>" or "email") into Brevo's sender shape.
 function parseSender() {
-  const raw = (config.email.from || '').trim();
+  // Strip any wrapping quotes (Render env vars keep them literally).
+  let raw = (config.email.from || '').trim().replace(/^["']+|["']+$/g, '').trim();
   const m = raw.match(/^\s*(.*?)\s*<\s*([^>]+)\s*>\s*$/);
-  if (m) return { name: (m[1] || 'Shri Yamuna Infra').replace(/^"|"$/g, '').trim(), email: m[2].trim() };
-  return { name: 'Shri Yamuna Infra', email: raw };
+  if (m) return { name: (m[1] || 'Shri Yamuna Infra').replace(/["']/g, '').trim(), email: m[2].trim() };
+  // Plain value: pull out the first email-looking token if present.
+  const em = raw.match(/[^\s<>"']+@[^\s<>"']+/);
+  return { name: 'Shri Yamuna Infra', email: em ? em[0] : raw };
 }
 
 // ---------- Brevo (Sendinblue) HTTP API — port 443, works on Render ----------
