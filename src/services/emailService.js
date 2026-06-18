@@ -14,6 +14,9 @@ function transport() {
     secure: config.smtp.secure, // 465 => true (SSL), 587 => false (STARTTLS)
     auth: { user: config.smtp.user, pass: config.smtp.pass },
     requireTLS: !config.smtp.secure, // force STARTTLS on 587
+    // Force IPv4: many hosts (Render/Railway) have no IPv6 egress, so connecting
+    // to Gmail's IPv6 address fails with ENETUNREACH. IPv4 is reachable.
+    family: 4,
     connectionTimeout: 25000,
     greetingTimeout: 25000,
     socketTimeout: 30000,
