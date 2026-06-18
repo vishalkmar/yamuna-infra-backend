@@ -18,6 +18,7 @@ router.use('/admins', adminsRouter); // A19 (superadmin)
 router.use('/users', require('./admin/usersRoutes'));       // A3
 router.use('/construction', require('./admin/constructionRoutes')); // Construction system
 router.use('/payment-plan', require('./admin/paymentPlanRoutes')); // Payment & Plan (per-property)
+router.use('/sos', require('./admin/sosRoutes')); // SOS & Emergency
 router.use('/services', require('./admin/servicesRoutes')); // A4
 router.use('/food', require('./admin/foodRoutes'));         // A5
 router.use('/temples', require('./admin/templesRoutes'));   // A9
