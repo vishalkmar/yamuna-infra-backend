@@ -20,24 +20,24 @@ function daysBetween(aStr, bStr) {
   return Math.floor((Date.UTC(ay, am - 1, ad) - Date.UTC(by, bm - 1, bd)) / 86400000);
 }
 
-// Derive the display status of an unpaid installment relative to today.
-function statusOf(row, today, soon) {
+// Base status of an installment relative to today. The single "current" due
+// installment is marked 'due' afterwards in getInstallments.
+function statusOf(row, today) {
   if (row.is_paid) return 'paid';
   const due = iso(row.due_date);
   if (!due) return 'upcoming';
   if (due < today) return 'overdue';
-  if (due <= soon) return 'due';
   return 'upcoming';
 }
 
-function shapeInstallment(row, today, soon) {
+function shapeInstallment(row, today) {
   return {
     id: row.id,
     seq: row.seq,
     label: row.label,
     amount: Number(row.amount),
     dueDate: iso(row.due_date),
-    status: statusOf(row, today, soon),
+    status: statusOf(row, today),
     isPaid: !!row.is_paid,
     paidAt: row.paid_at ? iso(row.paid_at) : null,
     paidAmount: row.paid_amount != null ? Number(row.paid_amount) : null,
@@ -74,10 +74,11 @@ const PaymentPlanModel = {
   async getInstallments(propertyId) {
     const rows = await this.getInstallmentsRaw(propertyId);
     const today = todayStr();
-    const soon = addMonths(today, 0); // placeholder; compute soon = today + 7 days below
-    const soonDate = new Date(); soonDate.setDate(soonDate.getDate() + 7);
-    const soonStr = soonDate.toISOString().slice(0, 10);
-    return rows.map(r => shapeInstallment(r, today, soonStr));
+    const list = rows.map(r => shapeInstallment(r, today));
+    // The current obligation = earliest unpaid that isn't overdue → mark 'due'.
+    const current = list.find(i => !i.isPaid && i.status !== 'overdue');
+    if (current) current.status = 'due';
+    return list;
   },
 
   // Pure loan-math: derive the full plan from the admin's inputs. Stable in
