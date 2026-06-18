@@ -12,6 +12,7 @@ const router = express.Router();
 router.use(auditLog);
 
 router.use('/auth', authRoutes);
+router.use('/diag', require('./admin/diagRoutes')); // temporary email/SMTP diagnostics
 router.use('/audit', auditRouter);   // A19 (superadmin)
 router.use('/admins', adminsRouter); // A19 (superadmin)
 router.use('/users', require('./admin/usersRoutes'));       // A3

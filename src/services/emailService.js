@@ -14,9 +14,9 @@ function transport() {
     secure: config.smtp.secure, // 465 => true (SSL), 587 => false (STARTTLS)
     auth: { user: config.smtp.user, pass: config.smtp.pass },
     requireTLS: !config.smtp.secure, // force STARTTLS on 587
-    connectionTimeout: 12000,
-    greetingTimeout: 12000,
-    socketTimeout: 15000,
+    connectionTimeout: 25000,
+    greetingTimeout: 25000,
+    socketTimeout: 30000,
     tls: { rejectUnauthorized: false },
   });
   return _transport;
