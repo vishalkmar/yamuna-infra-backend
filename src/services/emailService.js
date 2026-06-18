@@ -1,38 +1,75 @@
 const config = require('../config/env');
 
-// Lazy nodemailer transport (created once). Uses SMTP_* from .env. Fail-fast
-// timeouts so a blocked outbound SMTP port can never hang the request for long.
+// Parse SMTP_FROM ("Name <email>" or "email") into Brevo's sender shape.
+function parseSender() {
+  const raw = config.smtp.from || config.smtp.user || '';
+  const m = raw.match(/^\s*(.*?)\s*<\s*([^>]+)\s*>\s*$/);
+  if (m) return { name: (m[1] || 'Shri Yamuna Infra').replace(/^"|"$/g, ''), email: m[2] };
+  return { name: 'Shri Yamuna Infra', email: raw };
+}
+
+// ---------- Brevo (Sendinblue) HTTP API — port 443, works on Render ----------
+async function sendViaBrevo(to, subject, text, html) {
+  const sender = parseSender();
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'api-key': config.brevo.apiKey,
+      'content-type': 'application/json',
+      accept: 'application/json',
+    },
+    body: JSON.stringify({
+      sender,
+      to: [{ email: to }],
+      subject,
+      htmlContent: html || `<pre style="font:14px sans-serif">${text || ''}</pre>`,
+      textContent: text || undefined,
+    }),
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    return { delivered: false, reason: `brevo_${res.status}: ${body.slice(0, 300)}` };
+  }
+  const data = await res.json().catch(() => ({}));
+  return { delivered: true, messageId: data.messageId || 'brevo' };
+}
+
+// ---------- SMTP fallback (only if Brevo not configured) ----------
 let _transport = null;
-function transport() {
+async function smtpTransport() {
   if (_transport) return _transport;
   if (!config.smtp.host || !config.smtp.user) return null;
   // eslint-disable-next-line global-require
   const nodemailer = require('nodemailer');
+  const dns = require('dns').promises;
+  let host = config.smtp.host;
+  const tls = { rejectUnauthorized: false };
+  try {
+    const { address } = await dns.lookup(config.smtp.host, { family: 4 });
+    host = address; tls.servername = config.smtp.host;
+  } catch (_) { /* fall back to hostname */ }
   _transport = nodemailer.createTransport({
-    host: config.smtp.host,
-    port: config.smtp.port,
-    secure: config.smtp.secure, // 465 => true (SSL), 587 => false (STARTTLS)
+    host, port: config.smtp.port, secure: config.smtp.secure,
     auth: { user: config.smtp.user, pass: config.smtp.pass },
-    requireTLS: !config.smtp.secure, // force STARTTLS on 587
-    // Force IPv4: many hosts (Render/Railway) have no IPv6 egress, so connecting
-    // to Gmail's IPv6 address fails with ENETUNREACH. IPv4 is reachable.
-    family: 4,
-    connectionTimeout: 25000,
-    greetingTimeout: 25000,
-    socketTimeout: 30000,
-    tls: { rejectUnauthorized: false },
+    requireTLS: !config.smtp.secure, family: 4,
+    connectionTimeout: 20000, greetingTimeout: 20000, socketTimeout: 25000, tls,
   });
   return _transport;
 }
 
-// Send one email via Gmail SMTP. Resolves { delivered, ... }; never throws.
+// Send one email. Uses Brevo HTTP API when BREVO_API_KEY is set (recommended on
+// Render/cPanel which block outbound SMTP); otherwise falls back to SMTP.
+// Resolves { delivered, ... }; never throws.
 async function sendEmail(to, subject, text, html) {
-  const t = transport();
-  if (!t) {
-    console.warn('[email] SMTP not configured — logging instead:', to, subject);
-    return { delivered: false, reason: 'smtp_not_configured' };
-  }
   try {
+    if (config.brevo.apiKey) {
+      return await sendViaBrevo(to, subject, text, html);
+    }
+    const t = await smtpTransport();
+    if (!t) {
+      console.warn('[email] No transport configured — logging instead:', to, subject);
+      return { delivered: false, reason: 'no_transport' };
+    }
     const info = await t.sendMail({ from: config.smtp.from, to, subject, text, html });
     return { delivered: true, messageId: info.messageId };
   } catch (e) {

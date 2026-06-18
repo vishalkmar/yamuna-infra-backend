@@ -51,6 +51,11 @@ module.exports = {
     from: process.env.SMTP_FROM || process.env.SMTP_USER,
   },
 
+  // Brevo HTTP email API — primary transport (works where SMTP is blocked).
+  brevo: {
+    apiKey: process.env.BREVO_API_KEY,
+  },
+
   app: {
     baseUrl: process.env.APP_BASE_URL || 'http://localhost:4000',
     mobileScheme: process.env.MOBILE_APP_SCHEME || 'yamunainfra',

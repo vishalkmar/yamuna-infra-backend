@@ -19,10 +19,11 @@ router.get('/email', requireAdmin(), async (req, res) => {
   );
   return res.json({
     success: true,
-    build: 'ipv4-fix-2',
+    build: 'brevo-1',
     to,
     ms: Date.now() - t0,
-    smtp: { host: config.smtp.host, port: config.smtp.port, secure: config.smtp.secure, user: config.smtp.user },
+    transport: config.brevo.apiKey ? 'brevo' : 'smtp',
+    brevoKeySet: !!config.brevo.apiKey,
     result,
   });
 });
