@@ -1,7 +1,18 @@
 const asyncHandler = require('../utils/asyncHandler');
 const { success } = require('../utils/response');
 const AppError = require('../utils/AppError');
+const config = require('../config/env');
 const UserDocumentModel = require('../models/UserDocumentModel');
+
+// POST /api/admin/documents/upload  (multipart: file)
+// Stores the file locally (served at /uploads/documents/<file>) and returns its
+// public URL. Replaces the Cloudinary upload — local PDFs open/preview directly.
+exports.uploadLocal = asyncHandler(async (req, res) => {
+  if (!req.file) throw new AppError('No file uploaded', 400);
+  const base = String(config.app.baseUrl || '').replace(/\/+$/, '');
+  const url = `${base}/uploads/documents/${req.file.filename}`;
+  return success(res, { url, filename: req.file.filename, bytes: req.file.size }, 'Uploaded', 201);
+});
 
 // GET /api/admin/documents/residents?search=
 exports.residents = asyncHandler(async (req, res) => {

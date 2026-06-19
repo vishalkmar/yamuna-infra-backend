@@ -1,3 +1,4 @@
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -24,6 +25,16 @@ app.use(
 );
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
+
+// Locally stored uploads (resident document PDFs). Served with a cross-origin
+// resource policy so they can be previewed/embedded from the admin portal and
+// fetched by document viewers. PDFs are served inline (no forced download).
+app.use(
+  '/uploads',
+  express.static(path.join(__dirname, '../uploads'), {
+    setHeaders: res => res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin'),
+  }),
+);
 
 const generalLimiter = rateLimit({
   windowMs: 60 * 1000,
