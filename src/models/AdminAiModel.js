@@ -140,7 +140,7 @@ const AdminAiModel = {
   },
 
   // Full RAG answer for a question. Returns { answer, sources, mode }.
-  async answer(question, history = []) {
+  async answer(question, history = [], persona) {
     const tools = require('../services/aiTools');
     const [ctx, instructions, live] = await Promise.all([
       this.retrieve(question, 4),
@@ -148,7 +148,9 @@ const AdminAiModel = {
       tools.gather(question), // live GET-API data matching the query
     ]);
     const contextText = ctx.map((c, i) => `[${i + 1}] (${c.sourceTitle}) ${c.text}`).join('\n');
-    const system = `You are the Vrindavan Companion, a warm, concise assistant for residents of the Yamuna Infra township. Answer using the knowledge + live data below when relevant; if they don't cover it, answer helpfully and briefly and suggest the right app section. Prefer LIVE DATA for current listings/prices/timings. Keep replies short.${instructions ? `\n\nADMIN INSTRUCTIONS (always follow):\n${instructions}` : ''}${live.text ? `\n\nLIVE DATA (real-time from the app):\n${live.text}` : ''}\n\nKNOWLEDGE:\n${contextText || '(none)'}`;
+    const intro = persona
+      || 'You are the Vrindavan Companion, a warm, concise assistant for residents of the Yamuna Infra township.';
+    const system = `${intro} Answer using the knowledge + live data below when relevant; if they don't cover it, answer helpfully and briefly. Prefer LIVE DATA for current listings/prices/timings. Keep replies short.${instructions ? `\n\nADMIN INSTRUCTIONS (always follow):\n${instructions}` : ''}${live.text ? `\n\nLIVE DATA (real-time from the app):\n${live.text}` : ''}\n\nKNOWLEDGE:\n${contextText || '(none)'}`;
     const messages = [
       { role: 'system', content: system },
       ...history.slice(-6).map(m => ({ role: m.role, content: m.content })),

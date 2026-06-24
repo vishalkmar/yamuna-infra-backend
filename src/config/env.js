@@ -32,6 +32,14 @@ module.exports = {
     expiresIn: process.env.ADMIN_JWT_EXPIRES_IN || '12h',
   },
 
+  // Agent portal auth (AMS) — a third, separate auth domain (`type:'agent'`) so
+  // resident / admin / agent tokens can never be confused. Falls back to the
+  // resident JWT secret if a dedicated one isn't set.
+  agentJwt: {
+    secret: process.env.AGENT_JWT_SECRET || process.env.JWT_SECRET || 'dev-agent-secret-change-me',
+    expiresIn: process.env.AGENT_JWT_EXPIRES_IN || '7d',
+  },
+
   otp: {
     length: parseInt(process.env.OTP_LENGTH || '6', 10),
     ttlSeconds: parseInt(process.env.OTP_TTL_SECONDS || '300', 10),

@@ -51,6 +51,7 @@ const authLimiter = rateLimit({
 });
 app.use('/api/auth', authLimiter);
 app.use('/api/admin/auth', authLimiter);
+app.use('/api/agent/auth', authLimiter);
 
 // Root + /api index — friendly response so the base URL isn't a "Route not found".
 const apiInfo = (req, res) =>

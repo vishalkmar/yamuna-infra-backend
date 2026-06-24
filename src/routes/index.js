@@ -39,6 +39,10 @@ router.get('/content', adminSettingsController.publicBundle);
 // Admin portal (infra-website) — all routes behind admin auth (except login).
 router.use('/admin', adminRoutes);
 
+// Agent portal (AMS) — agent self-service, separate auth domain (except login/
+// register). Built module by module per AGENT_MANAGEMENT_SYSTEM.md.
+router.use('/agent', require('./agentRoutes'));
+
 router.use('/auth', authRoutes);
 router.use('/booking', bookingRoutes);
 router.use('/payment', paymentRoutes);
