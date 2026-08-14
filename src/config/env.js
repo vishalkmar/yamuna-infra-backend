@@ -91,6 +91,13 @@ module.exports = {
     baseUrl: process.env.LLM_BASE_URL,
     apiKey: process.env.LLM_API_KEY,
     model: process.env.LLM_MODEL,
+    // Tried in order when the primary model errors, times out, or answers with
+    // nothing. Providers retire hosted models without notice — a chain keeps the
+    // concierge answering instead of silently going dead.
+    fallbackModels: (process.env.LLM_FALLBACK_MODELS
+      || 'meta/llama-3.1-8b-instruct,meta/llama-3.1-70b-instruct')
+      .split(',').map(s => s.trim()).filter(Boolean),
+    timeoutMs: parseInt(process.env.LLM_TIMEOUT_MS || '12000', 10),
   },
   embeddings: {
     provider: process.env.EMBEDDINGS_PROVIDER || process.env.LLM_PROVIDER || 'mock',
@@ -98,6 +105,7 @@ module.exports = {
     apiKey: process.env.EMBEDDINGS_API_KEY || process.env.LLM_API_KEY,
     model: process.env.EMBEDDINGS_MODEL || 'nvidia/nv-embedqa-e5-v5',
     dim: parseInt(process.env.EMBEDDINGS_DIM || '1024', 10), // nv-embedqa-e5-v5 = 1024
+    timeoutMs: parseInt(process.env.EMBEDDINGS_TIMEOUT_MS || '20000', 10),
   },
 
   // Pinecone vector DB (optional). When set, RAG retrieval uses Pinecone instead

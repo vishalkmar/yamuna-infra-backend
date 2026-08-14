@@ -38,6 +38,20 @@ exports.deleteSource = asyncHandler(async (req, res) => {
   return success(res, null, 'Source deleted');
 });
 
+// ---------- Health ----------
+// GET /api/admin/ai/health — actually calls the provider so a retired model
+// shows up as a red light here instead of as a silently dead chatbot.
+exports.health = asyncHandler(async (req, res) => {
+  const llm = await ai.health();
+  const pinecone = { configured: vstore.pineconeReady(), ok: false, error: null };
+  if (pinecone.configured) {
+    try { await vstore.ensureIndex(); pinecone.ok = true; }
+    catch (e) { pinecone.error = e.message; }
+  }
+  const healthy = llm.models.some(m => m.ok) && llm.embeddings.ok;
+  return success(res, { healthy, llm, pinecone });
+});
+
 // ---------- Reindex ----------
 exports.reindex = asyncHandler(async (req, res) => success(res, await M.reindexAll(), 'Knowledge base reindexed'));
 

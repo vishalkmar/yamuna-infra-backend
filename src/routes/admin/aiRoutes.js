@@ -26,6 +26,7 @@ router.post('/sources/upload', canWrite, upload.single('file'), ctrl.uploadSourc
 router.put('/sources/:id', canWrite, validate({ body: sourceUpdate }), ctrl.updateSource);
 router.delete('/sources/:id', canWrite, ctrl.deleteSource);
 
+router.get('/health', requireAdmin(), ctrl.health);
 router.post('/reindex', canWrite, ctrl.reindex);
 router.post('/chat', requireAdmin(), validate({ body: Joi.object({ message: Joi.string().min(1).max(1000).required() }) }), ctrl.testChat);
 

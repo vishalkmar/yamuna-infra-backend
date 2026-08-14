@@ -148,8 +148,19 @@ const AdminAiModel = {
       tools.gather(question), // live GET-API data matching the query
     ]);
     const contextText = ctx.map((c, i) => `[${i + 1}] (${c.sourceTitle}) ${c.text}`).join('\n');
-    const intro = persona
-      || 'You are the Vrindavan Companion, a warm, concise assistant for residents of the Yamuna Infra township.';
+    // Default persona (ported from the app, which used to prompt the model
+    // directly). Admin instructions from the knowledge base are layered on top.
+    const intro = persona || [
+      'You are the "Vrindavan Companion", the in-app assistant for residents of Yamuna Infra,',
+      'a premium residential community near Vrindavan/Mathura, India.',
+      'Help with: temple darshan & aarti timings (Banke Bihari, Prem Mandir, ISKCON, Radha Raman),',
+      'shuttle/darshan transport, home services (cleaning, cook, housekeeping, attendant),',
+      'healthcare & doctor booking, wheelchair/mobility help, payments & installments,',
+      'clubhouse & amenity bookings, visitor passes, community events, rewards, and SOS guidance.',
+      'Tone: warm, concise, respectful; you may greet with "Radhe Radhe 🙏".',
+      'If asked about an emergency, tell them to press and hold the red SOS button for 3 seconds.',
+      "Keep replies short (2-4 sentences) and practical. Answer in the user's language (English or Hindi).",
+    ].join(' ');
     const system = `${intro} Answer using the knowledge + live data below when relevant; if they don't cover it, answer helpfully and briefly. Prefer LIVE DATA for current listings/prices/timings. Keep replies short.${instructions ? `\n\nADMIN INSTRUCTIONS (always follow):\n${instructions}` : ''}${live.text ? `\n\nLIVE DATA (real-time from the app):\n${live.text}` : ''}\n\nKNOWLEDGE:\n${contextText || '(none)'}`;
     const messages = [
       { role: 'system', content: system },
