@@ -45,6 +45,17 @@ module.exports = {
     ttlSeconds: parseInt(process.env.OTP_TTL_SECONDS || '300', 10),
   },
 
+  // App-store review account. A Play/App Store reviewer has no access to our
+  // inbox or SIM, so one designated resident signs in with a fixed code instead
+  // of a delivered OTP. The bypass is OFF unless DEMO_LOGIN_OTP is set, and it
+  // only ever applies to the exact email/mobile named here — every other
+  // account still goes through the normal delivered-OTP flow.
+  demoLogin: {
+    email: (process.env.DEMO_LOGIN_EMAIL || '').toLowerCase().trim(),
+    mobile: (process.env.DEMO_LOGIN_MOBILE || '').trim(),
+    otp: (process.env.DEMO_LOGIN_OTP || '').trim(),
+  },
+
   sms: {
     provider: process.env.SMS_PROVIDER || 'console',
     apiKey: process.env.SMS_API_KEY,

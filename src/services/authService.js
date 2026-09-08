@@ -13,6 +13,49 @@ function generateOtp() {
   return String(crypto.randomInt(min, max));
 }
 
+// ---------- App-store review account ----------
+// A store reviewer can't read our inbox or receive our SMS, so the one account
+// named in DEMO_LOGIN_* accepts a fixed code. Everything else about the login
+// is unchanged: the resident must still exist and be active, and the fixed code
+// is rejected for every other identifier. Unset DEMO_LOGIN_OTP to disable.
+function demoEnabled() {
+  return Boolean(config.demoLogin.otp);
+}
+function isDemoEmail(id) {
+  return demoEnabled() && Boolean(config.demoLogin.email) && id === config.demoLogin.email;
+}
+function isDemoMobile(mobile) {
+  return demoEnabled() && Boolean(config.demoLogin.mobile) && mobile === config.demoLogin.mobile;
+}
+// Timing-safe compare so the fixed code can't be guessed byte by byte.
+function codeMatches(submitted, expected) {
+  const a = Buffer.from(String(submitted));
+  const b = Buffer.from(String(expected));
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+// Shared tail of a successful login: refresh the booking link and mint a token.
+async function finalizeLogin(user, extraClaim) {
+  const synced = await UserModel.syncPrimaryBookingId(user.id);
+  if (synced) user.primary_booking_id = synced;
+  const token = signToken({ sub: user.id, ...extraClaim });
+  return {
+    token,
+    user: {
+      id: user.id,
+      mobile: user.mobile,
+      name: user.name,
+      email: user.email,
+      bookingId: user.primary_booking_id,
+    },
+  };
+}
+
+function assertLoginable(user, what) {
+  if (!user) throw new AppError(`No resident account found for this ${what}. Please contact the office.`, 404);
+  if (user.is_active === 0) throw new AppError('Your account is inactive. Please contact the office.', 403);
+}
+
 async function sendOtp(mobile) {
   // Residents are created by the admin portal — only a known, active account
   // may receive an OTP. No self-registration.
@@ -22,6 +65,11 @@ async function sendOtp(mobile) {
   }
   if (user.is_active === 0) {
     throw new AppError('Your account is inactive. Please contact the office.', 403);
+  }
+
+  // Review account: nothing to send, the code is fixed.
+  if (isDemoMobile(mobile)) {
+    return { sent: true, expiresInSeconds: config.otp.ttlSeconds };
   }
 
   const code = generateOtp();
@@ -34,6 +82,12 @@ async function sendOtp(mobile) {
 }
 
 async function verifyOtp(mobile, submittedCode) {
+  if (isDemoMobile(mobile) && codeMatches(submittedCode, config.demoLogin.otp)) {
+    const demoUser = await UserModel.findByMobile(mobile);
+    assertLoginable(demoUser, 'number');
+    return finalizeLogin(demoUser, { mobile: demoUser.mobile });
+  }
+
   const record = await OtpModel.findLatestActive(mobile);
   if (!record) {
     throw new AppError('OTP expired or not requested. Please request a new one.', 400);
@@ -86,6 +140,11 @@ async function sendEmailOtp(email) {
     throw new AppError('Your account is inactive. Please contact the office.', 403);
   }
 
+  // Review account: nothing to send, the code is fixed.
+  if (isDemoEmail(id)) {
+    return { sent: true, expiresInSeconds: config.otp.ttlSeconds };
+  }
+
   const code = generateOtp();
   const expiresAt = new Date(Date.now() + config.otp.ttlSeconds * 1000);
   await OtpModel.create({ mobile: id, code, expiresAt });
@@ -106,6 +165,13 @@ async function sendEmailOtp(email) {
 
 async function verifyEmailOtp(email, submittedCode) {
   const id = String(email).toLowerCase().trim();
+
+  if (isDemoEmail(id) && codeMatches(submittedCode, config.demoLogin.otp)) {
+    const demoUser = await UserModel.findByEmail(id);
+    assertLoginable(demoUser, 'email');
+    return finalizeLogin(demoUser, { email: demoUser.email });
+  }
+
   const record = await OtpModel.findLatestActive(id);
   if (!record) throw new AppError('OTP expired or not requested. Please request a new one.', 400);
   if (record.attempts >= 5) throw new AppError('Too many failed attempts. Request a new OTP.', 429);
